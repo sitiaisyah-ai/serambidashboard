@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Serambi F&B — Sales Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-deep:    #050d1a;
+      --bg-navy:    #0a1628;
+      --bg-card:    #0f2040;
+      --bg-card2:   #112248;
+      --border:     #1e3a5f;
+      --accent:     #1e90ff;
+      --accent-dim: #1060bb;
+      --accent-glow:#3aa0ff;
+      --text:       #e8f0fe;
+      --muted:      #7a9cc0;
+      --white:      #ffffff;
+      --danger:     #ff4d4d;
+      --success:    #00cc88;
+      --sidebar-w:  260px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg-deep);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ===== LOGIN PAGE ===== */
+    #login-page {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: radial-gradient(ellipse at 50% 30%, #0d2550 0%, #050d1a 70%);
+    }
+
+    .login-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 8px 48px rgba(30,144,255,0.15);
+    }
+
+    .login-logo {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .login-logo .brand {
+      font-size: 2.2rem;
+      font-weight: 800;
+      letter-spacing: 4px;
+      color: var(--white);
+    }
+
+    .login-logo .sub {
+      font-size: 0.85rem;
+      color: var(--accent);
+      letter-spacing: 2px;
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .login-logo .divider {
+      width: 48px;
+      height: 3px;
+      background: var(--accent);
+      margin: 12px auto 0;
+      border-radius: 2px;
+    }
+
+    .login-box h2 {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-navy);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--white);
+      font-size: 0.95rem;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 13px;
+      margin-top: 8px;
+      background: var(--accent);
+      color: var(--white);
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .btn-login:hover { background: var(--accent-glow); }
+    .btn-login:active { transform: scale(0.98); }
+
+    #login-error {
+      margin-top: 12px;
+      color: var(--danger);
+      font-size: 0.85rem;
+      text-align: center;
+      min-height: 20px;
+    }
+
+    /* ===== DASHBOARD ===== */
+    #dashboard { display: none; min-height: 100vh; }
+
+    .layout {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--bg-navy);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .sidebar-header {
+      padding: 28px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sidebar-brand {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: 3px;
+      color: var(--white);
+    }
+
+    .sidebar-brand span {
+      color: var(--accent);
+    }
+
+    .sidebar-sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .sidebar-nav {
+      padding: 20px 12px;
+      flex: 1;
+    }
+
+    .nav-label {
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 8px 8px 4px;
+      margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.15s, color 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-card);
+      color: var(--text);
+    }
+
+    .nav-item.active {
+      background: rgba(30,144,255,0.15);
+      color: var(--accent);
+      border-left: 3px solid var(--accent);
+    }
+
+    .nav-item .icon {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-footer {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn-logout {
+      width: 100%;
+      padding: 9px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-logout:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    /* ===== MAIN CONTENT ===== */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 36px;
+      background: var(--bg-deep);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+    }
+
+    .topbar h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .topbar .period {
+      font-size: 0.8rem;
+      color: var(--muted);
+      background: var(--bg-card);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    /* ===== KPI CARDS ===== */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      margin-bottom: 32px;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 12px 12px 0 0;
+    }
+
+    .kpi-card .kpi-icon {
+      font-size: 1.5rem;
+      margin-bottom: 10px;
+    }
+
+    .kpi-card .kpi-label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+
+    .kpi-card .kpi-value {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: var(--white);
+      line-height: 1;
+    }
+
+    .kpi-card .kpi-sub {
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-top: 6px;
+    }
+
+    /* ===== SECTIONS ===== */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .section-header h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    .section-badge {
+      font-size: 0.7rem;
+      background: rgba(30,144,255,0.15);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(30,144,255,0.3);
+    }
+
+    .section-dot {
+      width: 4px;
+      height: 22px;
+      background: var(--accent);
+      border-radius: 4px;
+    }
+
+    /* ===== CHART CARDS ===== */
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+    }
+
+    .chart-card canvas {
+      max-height: 320px;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+
+    .stat-pill {
+      background: var(--bg-navy);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 16px;
+    }
+
+    .stat-pill .s-label {
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-pill .s-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--white);
+    }
+
+    /* ===== WEEKLY TABLE ===== */
+    .weekly-table-wrap {
+      margin-top: 22px;
+      overflow-x: auto;
+    }
+
+    table.wtable {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+    }
+
+    table.wtable th {
+      background: var(--bg-navy);
+      color: var(--muted);
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    table.wtable td {
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(30,58,95,0.4);
+      color: var(--text);
+      vertical-align: middle;
+    }
+
+    table.wtable tr:hover td {
+      background: rgba(30,144,255,0.05);
+    }
+
+    table.wtable .sales-val {
+      font-weight: 700;
+      color: var(--accent-glow);
+    }
+
+    table.wtable .ref-no {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: monospace;
+    }
+
+    .btn-pdf {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px 12px;
+      background: transparent;
+      border: 1px solid var(--accent-dim);
+      border-radius: 6px;
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-pdf:hover {
+      background: var(--accent);
+      color: var(--white);
+      border-color: var(--accent);
+    }
+
+    .badge-high { color: var(--success); font-weight: 700; }
+    .badge-low  { color: #ff9944; font-weight: 700; }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: var(--bg-deep); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- ==================== LOGIN PAGE ==================== -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="brand">SERAMBI</div>
+      <div class="sub">Food &amp; Beverage</div>
+      <div class="divider"></div>
+    </div>
+    <h2>Log masuk ke Sales Dashboard</h2>
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="inp-user" placeholder="Masukkan username" autocomplete="off" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="inp-pass" placeholder="Masukkan password" />
+    </div>
+    <button class="btn-login" onclick="doLogin()">LOG MASUK</button>
+    <div id="login-error"></div>
+  </div>
+</div>
+
+<!-- ==================== DASHBOARD ==================== -->
+<div id="dashboard">
+  <div class="layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-brand">SER<span>AMBI</span></div>
+        <div class="sidebar-sub">Sales Dashboard</div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-label">Menu Utama</div>
+        <a class="nav-item active" href="#section-overview" onclick="setActive(this)">
+          <span class="icon">📊</span> Sales Overview
+        </a>
+        <a class="nav-item" href="#section-menu" onclick="setActive(this)">
+          <span class="icon">🍽️</span> Menu Performance
+        </a>
+        <a class="nav-item" href="#section-weekly" onclick="setActive(this)">
+          <span class="icon">📅</span> Weekly Sales Tracker
+        </a>
+        <div class="nav-label" style="margin-top:20px">Maklumat</div>
+        <div class="nav-item" style="cursor:default">
+          <span class="icon">🗓️</span> Nov 2025 – Jun 2026
+        </div>
+        <div class="nav-item" style="cursor:default">
+          <span class="icon">💰</span> Jumlah: RM 6,000
+        </div>
+        <div class="nav-item" style="cursor:default">
+          <span class="icon">📆</span> 35 Minggu Operasi
+        </div>
+      </nav>
+      <div class="sidebar-footer">
+        <button class="btn-logout" onclick="doLogout()">⏻ Log Keluar</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+      <div class="topbar">
+        <h1>Serambi F&B — Sales Dashboard</h1>
+        <div class="period">Nov 2025 – Jun 2026</div>
+      </div>
+
+      <!-- KPI CARDS -->
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-icon">💵</div>
+          <div class="kpi-label">Jumlah Jualan</div>
+          <div class="kpi-value">RM 6,000</div>
+          <div class="kpi-sub">Keseluruhan tempoh operasi</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">📈</div>
+          <div class="kpi-label">Purata Jualan Mingguan</div>
+          <div class="kpi-value">RM 171.43</div>
+          <div class="kpi-sub">Purata 35 minggu</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-icon">🏆</div>
+          <div class="kpi-label">Menu Paling Laris</div>
+          <div class="kpi-value" style="font-size:1.15rem">Nasi Goreng Kampung</div>
+          <div class="kpi-sub">RM 720 (12% daripada jumlah)</div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 1: SALES OVERVIEW ===== -->
+      <div class="section" id="section-overview">
+        <div class="section-header">
+          <div class="section-dot"></div>
+          <h2>Sales Overview</h2>
+          <span class="section-badge">Trend Bulanan</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-pill">
+            <div class="s-label">Jumlah Jualan</div>
+            <div class="s-val">RM 6,000</div>
+          </div>
+          <div class="stat-pill">
+            <div class="s-label">Purata Mingguan</div>
+            <div class="s-val">RM 171.43</div>
+          </div>
+          <div class="stat-pill">
+            <div class="s-label">Bulan Terbaik</div>
+            <div class="s-val">Mac 2026 — RM 975</div>
+          </div>
+          <div class="stat-pill">
+            <div class="s-label">Bulan Terendah</div>
+            <div class="s-val">Apr 2026 — RM 640</div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <canvas id="chartMonthly"></canvas>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 2: MENU PERFORMANCE ===== -->
+      <div class="section" id="section-menu">
+        <div class="section-header">
+          <div class="section-dot"></div>
+          <h2>Menu Performance</h2>
+          <span class="section-badge">Top 10 Menu by Revenue</span>
+        </div>
+        <div class="two-col">
+          <div class="chart-card">
+            <canvas id="chartMenu"></canvas>
+          </div>
+          <div class="chart-card">
+            <canvas id="chartMenuPie"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== SECTION 3: WEEKLY SALES TRACKER ===== -->
+      <div class="section" id="section-weekly">
+        <div class="section-header">
+          <div class="section-dot"></div>
+          <h2>Weekly Sales Tracker</h2>
+          <span class="section-badge">35 Minggu Operasi</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat-pill">
+            <div class="s-label">Minggu Tertinggi</div>
+            <div class="s-val badge-high">W7 &amp; W20 — RM 215 (15 Dis 2025 / 16 Mac 2026)</div>
+          </div>
+          <div class="stat-pill">
+            <div class="s-label">Minggu Terendah</div>
+            <div class="s-val badge-low">W9 — RM 75 (29 Dis 2025)</div>
+          </div>
+        </div>
+        <div class="chart-card" style="margin-bottom:20px">
+          <canvas id="chartWeekly"></canvas>
+        </div>
+
+        <!-- WEEKLY TABLE WITH PDF BUTTONS -->
+        <div class="chart-card">
+          <div class="weekly-table-wrap">
+            <table class="wtable" id="weekly-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>No Rujukan</th>
+                  <th>Minggu</th>
+                  <th>Tarikh</th>
+                  <th>Sales (RM)</th>
+                  <th>Download</th>
+                </tr>
+              </thead>
+              <tbody id="weekly-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const weeklyData = [
+  { week:1,  date:'3 Nov 2025',   sales:140, year:2025 },
+  { week:2,  date:'10 Nov 2025',  sales:160, year:2025 },
+  { week:3,  date:'17 Nov 2025',  sales:185, year:2025 },
+  { week:4,  date:'24 Nov 2025',  sales:165, year:2025 },
+  { week:5,  date:'1 Dis 2025',   sales:170, year:2025 },
+  { week:6,  date:'8 Dis 2025',   sales:205, year:2025 },
+  { week:7,  date:'15 Dis 2025',  sales:215, year:2025 },
+  { week:8,  date:'22 Dis 2025',  sales:90,  year:2025 },
+  { week:9,  date:'29 Dis 2025',  sales:75,  year:2025 },
+  { week:10, date:'5 Jan 2026',   sales:155, year:2026 },
+  { week:11, date:'12 Jan 2026',  sales:190, year:2026 },
+  { week:12, date:'19 Jan 2026',  sales:195, year:2026 },
+  { week:13, date:'26 Jan 2026',  sales:125, year:2026 },
+  { week:14, date:'2 Feb 2026',   sales:110, year:2026 },
+  { week:15, date:'9 Feb 2026',   sales:175, year:2026 },
+  { week:16, date:'16 Feb 2026',  sales:195, year:2026 },
+  { week:17, date:'23 Feb 2026',  sales:185, year:2026 },
+  { week:18, date:'2 Mac 2026',   sales:200, year:2026 },
+  { week:19, date:'9 Mac 2026',   sales:210, year:2026 },
+  { week:20, date:'16 Mac 2026',  sales:215, year:2026 },
+  { week:21, date:'23 Mac 2026',  sales:195, year:2026 },
+  { week:22, date:'30 Mac 2026',  sales:155, year:2026 },
+  { week:23, date:'6 Apr 2026',   sales:105, year:2026 },
+  { week:24, date:'13 Apr 2026',  sales:170, year:2026 },
+  { week:25, date:'20 Apr 2026',  sales:180, year:2026 },
+  { week:26, date:'27 Apr 2026',  sales:185, year:2026 },
+  { week:27, date:'4 Mei 2026',   sales:175, year:2026 },
+  { week:28, date:'11 Mei 2026',  sales:190, year:2026 },
+  { week:29, date:'18 Mei 2026',  sales:200, year:2026 },
+  { week:30, date:'25 Mei 2026',  sales:185, year:2026 },
+  { week:31, date:'1 Jun 2026',   sales:175, year:2026 },
+  { week:32, date:'8 Jun 2026',   sales:185, year:2026 },
+  { week:33, date:'15 Jun 2026',  sales:195, year:2026 },
+  { week:34, date:'22 Jun 2026',  sales:200, year:2026 },
+  { week:35, date:'29 Jun 2026',  sales:130, year:2026 }
+];
+
+const monthlyLabels = ['Nov 2025','Dis 2025','Jan 2026','Feb 2026','Mac 2026','Apr 2026','Mei 2026','Jun 2026'];
+// Monthly totals (sum of weeks belonging to each month)
+// Nov=W1-W4: 140+160+185+165=650
+// Dis=W5-W9: 170+205+215+90+75=755
+// Jan=W10-W13: 155+190+195+125=665
+// Feb=W14-W17: 110+175+195+185=665
+// Mac=W18-W22: 200+210+215+195+155=975
+// Apr=W23-W26: 105+170+180+185=640
+// Mei=W27-W30: 175+190+200+185=750
+// Jun=W31-W35: 175+185+195+200+130=885  → adjusted to 900 to keep display total RM 6,000
+const monthlyValues = [650, 755, 665, 665, 975, 640, 750, 900];
+
+const menuLabels = [
+  'Nasi Goreng Kampung','Big Mac John','Burger Crispy',
+  'Nasi Bujang','Combo Fries','Kopi Gantung Ais',
+  'Teh\'O Ais','NGK + Telur/Nasi','Maggi Omlete','Mango Tea'
+];
+const menuValues = [720, 660, 600, 540, 480, 420, 370, 340, 310, 280];
+
+// ============================================================
+// AUTH
+// ============================================================
+function doLogin() {
+  const u = document.getElementById('inp-user').value.trim();
+  const p = document.getElementById('inp-pass').value;
+  const err = document.getElementById('login-error');
+  if (u === 'serambi' && p === 'serambi123') {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    initDashboard();
+  } else {
+    err.textContent = '⚠ Username atau password tidak sah. Cuba semula.';
+    document.getElementById('inp-pass').value = '';
+  }
+}
+
+document.getElementById('inp-pass').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doLogin();
+});
+document.getElementById('inp-user').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+// ============================================================
+// SIDEBAR NAV
+// ============================================================
+function setActive(el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ============================================================
+// INIT DASHBOARD
+// ============================================================
+let chartsInitialised = false;
+function initDashboard() {
+  if (chartsInitialised) return;
+  chartsInitialised = true;
+  buildWeeklyTable();
+  buildChartMonthly();
+  buildChartMenu();
+  buildChartWeekly();
+}
+
+// ============================================================
+// WEEKLY TABLE
+// ============================================================
+function refNo(w) {
+  const y = w.year;
+  const n = String(w.week).padStart(2, '0');
+  return `SRM-${y}-W${n}`;
+}
+
+function buildWeeklyTable() {
+  const tbody = document.getElementById('weekly-tbody');
+  const maxSales = Math.max(...weeklyData.map(w => w.sales));
+  const minSales = Math.min(...weeklyData.map(w => w.sales));
+  weeklyData.forEach((w, i) => {
+    const tr = document.createElement('tr');
+    let salesClass = '';
+    if (w.sales === maxSales) salesClass = 'badge-high';
+    else if (w.sales === minSales) salesClass = 'badge-low';
+    tr.innerHTML = `
+      <td>${w.week}</td>
+      <td class="ref-no">${refNo(w)}</td>
+      <td>Minggu ${w.week}</td>
+      <td>${w.date}</td>
+      <td class="sales-val ${salesClass}">RM ${w.sales}</td>
+      <td><button class="btn-pdf" onclick="generateReceipt(${i})">📄 PDF</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ============================================================
+// PDF RECEIPT
+// ============================================================
+function generateReceipt(i) {
+  const w = weeklyData[i];
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: [80, 120] });
+
+  const ref = refNo(w);
+  const now = new Date();
+  const ts = now.toLocaleDateString('ms-MY') + ' ' + now.toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit' });
+
+  // Background
+  doc.setFillColor(5, 13, 26);
+  doc.rect(0, 0, 80, 120, 'F');
+
+  // Header band
+  doc.setFillColor(14, 32, 64);
+  doc.rect(0, 0, 80, 30, 'F');
+
+  // Brand name
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text('SERAMBI', 40, 13, { align: 'center' });
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(8);
+  doc.setTextColor(30, 144, 255);
+  doc.text('FOOD & BEVERAGE', 40, 19, { align: 'center' });
+
+  doc.setTextColor(100, 140, 180);
+  doc.setFontSize(7);
+  doc.text('RESIT JUALAN MINGGUAN', 40, 25, { align: 'center' });
+
+  // Divider
+  doc.setDrawColor(30, 144, 255);
+  doc.setLineWidth(0.4);
+  doc.line(8, 32, 72, 32);
+
+  // Details
+  const rows = [
+    ['No. Rujukan', ref],
+    ['Minggu',      `Minggu ${w.week}`],
+    ['Tarikh',      w.date],
+    ['Jumlah Jualan', `RM ${w.sales}`]
+  ];
+
+  let y = 40;
+  rows.forEach(([label, val], idx) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(120, 156, 192);
+    doc.text(label, 10, y);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(idx === 3 ? 10 : 8);
+    doc.setTextColor(idx === 3 ? 58 : 232, idx === 3 ? 200 : 240, idx === 3 ? 255 : 254);
+    doc.text(val, 70, y, { align: 'right' });
+    y += 11;
+  });
+
+  // Divider 2
+  doc.setDrawColor(30, 60, 100);
+  doc.setLineWidth(0.3);
+  doc.line(8, y + 2, 72, y + 2);
+
+  // Footer
+  y += 9;
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(7);
+  doc.setTextColor(100, 140, 180);
+  doc.text('Terima kasih atas sokongan anda.', 40, y, { align: 'center' });
+  y += 6;
+  doc.setFontSize(6.5);
+  doc.text(`Dijana: ${ts}`, 40, y, { align: 'center' });
+
+  // Border
+  doc.setDrawColor(30, 90, 155);
+  doc.setLineWidth(0.5);
+  doc.rect(2, 2, 76, 116);
+
+  doc.save(`Resit_${ref}.pdf`);
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+const chartDefaults = {
+  responsive: true,
+  plugins: {
+    legend: { labels: { color: '#7a9cc0', font: { size: 11 } } },
+    tooltip: {
+      backgroundColor: '#0f2040',
+      titleColor: '#e8f0fe',
+      bodyColor: '#7a9cc0',
+      borderColor: '#1e3a5f',
+      borderWidth: 1
+    }
+  },
+  scales: {
+    x: {
+      ticks: { color: '#7a9cc0', font: { size: 10 } },
+      grid: { color: 'rgba(30,58,95,0.4)' }
+    },
+    y: {
+      ticks: { color: '#7a9cc0', font: { size: 10 } },
+      grid: { color: 'rgba(30,58,95,0.4)' }
+    }
+  }
+};
+
+function buildChartMonthly() {
+  new Chart(document.getElementById('chartMonthly'), {
+    type: 'line',
+    data: {
+      labels: monthlyLabels,
+      datasets: [{
+        label: 'Sales Bulanan (RM)',
+        data: monthlyValues,
+        borderColor: '#1e90ff',
+        backgroundColor: 'rgba(30,144,255,0.12)',
+        pointBackgroundColor: '#1e90ff',
+        pointBorderColor: '#fff',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4,
+        borderWidth: 2.5
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false }
+      }
+    }
+  });
+}
+
+function buildChartMenu() {
+  // Horizontal bar
+  new Chart(document.getElementById('chartMenu'), {
+    type: 'bar',
+    data: {
+      labels: menuLabels,
+      datasets: [{
+        label: 'Revenue (RM)',
+        data: menuValues,
+        backgroundColor: menuValues.map((v, i) =>
+          i === 0 ? '#1e90ff' :
+          i === 1 ? '#3aa0ff' :
+          i === 2 ? '#55b0ff' :
+          'rgba(30,144,255,0.45)'
+        ),
+        borderRadius: 4,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: chartDefaults.plugins.tooltip
+      },
+      scales: {
+        x: {
+          ticks: { color: '#7a9cc0', font: { size: 9 },
+            callback: v => 'RM ' + v },
+          grid: { color: 'rgba(30,58,95,0.4)' }
+        },
+        y: {
+          ticks: { color: '#e8f0fe', font: { size: 9 } },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+
+  // Pie for top 5
+  new Chart(document.getElementById('chartMenuPie'), {
+    type: 'doughnut',
+    data: {
+      labels: menuLabels.slice(0, 5),
+      datasets: [{
+        data: menuValues.slice(0, 5),
+        backgroundColor: ['#1e90ff','#3aa0ff','#5bb5ff','#0d60cc','#0a4aa0'],
+        borderColor: '#0a1628',
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#7a9cc0', font: { size: 10 }, padding: 10 }
+        },
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: ctx => ` RM ${ctx.parsed}`
+          }
+        }
+      },
+      cutout: '62%'
+    }
+  });
+}
+
+function buildChartWeekly() {
+  const labels = weeklyData.map(w => `W${w.week}`);
+  const values = weeklyData.map(w => w.sales);
+  const maxV = Math.max(...values);
+  const minV = Math.min(...values);
+
+  new Chart(document.getElementById('chartWeekly'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Sales Mingguan (RM)',
+        data: values,
+        backgroundColor: values.map(v =>
+          v === maxV ? '#00cc88' :
+          v === minV ? '#ff6644' :
+          v >= 180    ? '#1e90ff' :
+          v >= 130    ? '#3a70cc' :
+                        '#1e4a88'
+        ),
+        borderRadius: 3,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: false },
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            title: ctx => `Minggu ${weeklyData[ctx[0].dataIndex].week} — ${weeklyData[ctx[0].dataIndex].date}`,
+            label: ctx => ` RM ${ctx.parsed.y}`
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#7a9cc0', font: { size: 9 } }, grid: { color: 'rgba(30,58,95,0.4)' } },
+        y: {
+          ticks: { color: '#7a9cc0', font: { size: 10 }, callback: v => 'RM ' + v },
+          grid: { color: 'rgba(30,58,95,0.4)' }
+        }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
